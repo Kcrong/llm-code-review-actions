@@ -14,7 +14,9 @@ runs:
   steps:
     - name: Code review
       id: review
-      run: go run cmd/main.go
+      run: |
+        go run cmd/main.go > $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
       env:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
         DIFF_FILE: ${{ inputs.diff_file }}
