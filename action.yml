@@ -1,0 +1,11 @@
+---
+name: "POC"
+description: "Checks that PR conforms to our process guides"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Testing
+      run: go mod download && go run cmd/main.go
+      shell: bash
+      working-directory: ${{ github.action_path }}
