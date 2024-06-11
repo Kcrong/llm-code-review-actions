@@ -13,7 +13,6 @@ runs:
   using: "composite"
   steps:
     - name: Code review
-      id: review
       run: go run cmd/main.go
       env:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}

@@ -133,7 +133,5 @@ func run(params RunParameters) (string, error) {
 		return "", errors.Wrap(err, "error creating chat completion")
 	}
 
-	fmt.Printf("Response: %+v\n", resp)
-
 	return resp.Choices[0].Message.Content, nil
 }
