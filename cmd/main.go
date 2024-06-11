@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -55,13 +56,22 @@ func main() {
 }
 
 func createComment(token string, content string) error {
-	owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
-	repo := os.Getenv("GITHUB_REPOSITORY_NAME")
 	prNumber := os.Getenv("GITHUB_PR_NUMBER")
-
-	if owner == "" || repo == "" || prNumber == "" {
-		return errors.New("one or more required environment variables are not set")
+	if prNumber == "" {
+		return errors.New("GITHUB_PR_NUMBER environment variable is not set")
 	}
+
+	repository := os.Getenv("GITHUB_REPOSITORY")
+	if repository == "" {
+		return errors.New("GITHUB_REPOSITORY environment variable is not set")
+	}
+
+	split := strings.Split(repository, "/")
+	if len(split) != 2 {
+		return errors.New("invalid GITHUB_REPOSITORY format")
+	}
+
+	owner, repo := split[0], split[1]
 
 	// Create a new GitHub client
 	ctx := context.Background()
