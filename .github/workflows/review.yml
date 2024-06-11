@@ -12,7 +12,7 @@ jobs:
         uses: actions/setup-go@v2
 
       - name: Generate diff
-        uses: technote-space/get-diff-action@v6
+        uses: Kcrong/get-diff-action@main
         id: get-diff
 
       - name: Save diff
