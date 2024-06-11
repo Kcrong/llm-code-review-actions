@@ -1,0 +1,10 @@
+# github.com/magicx-ai/groq-go v0.1.0-alpha
+## explicit; go 1.22.3
+github.com/magicx-ai/groq-go/groq
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/tmaxmax/go-sse v0.8.0
+## explicit; go 1.20
+github.com/tmaxmax/go-sse
+github.com/tmaxmax/go-sse/internal/parser
