@@ -23,7 +23,7 @@ jobs:
         if: steps.get-diff.outputs.diff
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
-          git diff origin/${{ github.event.pull_request.base.ref }} > diff.txt
+          git diff origin/${{ github.event.pull_request.base.ref }} -- . ':!vendor' ':!go.mod' ':!go.sum' > diff.txt
 
       - name: Review
         if: steps.get-diff.outputs.diff

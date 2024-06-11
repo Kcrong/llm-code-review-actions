@@ -1,0 +1,232 @@
+diff --git a/.github/workflows/review.yml b/.github/workflows/review.yml
+new file mode 100644
+index 0000000..a1d0da5
+--- /dev/null
++++ b/.github/workflows/review.yml
+@@ -0,0 +1,33 @@
++name: code review
++
++on: pull_request
++
++jobs:
++  review:
++    permissions:
++      contents: read
++      pull-requests: write
++
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v2
++
++      - name: Set up Go
++        uses: actions/setup-go@v2
++
++      - name: Generate diff
++        uses: technote-space/get-diff-action@v6
++        id: get-diff
++
++      - name: Save diff
++        if: steps.get-diff.outputs.diff
++        run: |
++          git fetch origin ${{ github.event.pull_request.base.ref }}
++          git diff origin/${{ github.event.pull_request.base.ref }} -- . ':!vendor' > diff.txt
++
++      - name: Review
++        if: steps.get-diff.outputs.diff
++        uses: Kcrong/groq-code-review-actions@init
++        with:
++          groq_api_key: ${{ secrets.GROQ_API_KEY }}
++          diff_file: diff.txt
+diff --git a/.github/workflows/test.yml b/.github/workflows/test.yml
+deleted file mode 100644
+index e768d4e..0000000
+--- a/.github/workflows/test.yml
++++ /dev/null
+@@ -1,13 +0,0 @@
+-name: test
+-on: [push]
+-jobs:
+-  test:
+-    runs-on: ubuntu-latest
+-    steps:
+-      - uses: actions/checkout@v2
+-      - name: Set up Go
+-        uses: actions/setup-go@v2
+-      - name: Run tests
+-        uses: Kcrong/groq-code-review-actions@main
+-        with:
+-          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+diff --git a/action.yml b/action.yml
+index 2f2abb3..54b3a05 100644
+--- a/action.yml
++++ b/action.yml
+@@ -5,20 +5,29 @@ inputs:
+   groq_api_key:
+     description: 'Groq API key'
+     required: true
++  diff_file:
++    description: 'Generated diff file'
++    required: true
+ 
+ runs:
+   using: "composite"
+   steps:
+-    - uses: actions/checkout@v2
+-    - name: Generate diff
+-      shell: bash
+-      working-directory: ${{ github.action_path }}
+-      run: |
+-        git fetch origin ${{ github.event.pull_request.base.ref }}
+-        git diff origin/${{ github.event.pull_request.base.ref }} > diff.txt
+     - name: Code review
++      id: review
+       run: go run cmd/main.go
+       env:
+         GROQ_API_KEY: ${{ inputs.groq_api_key }}
++        DIFF_FILE: ${{ inputs.diff_file }}
++        GITHUB_TOKEN: ${{ github.token }}
+       shell: bash
+       working-directory: ${{ github.action_path }}
++
++    - uses: actions/github-script@v6
++      with:
++        script: |
++          github.rest.issues.createComment({
++            issue_number: context.issue.number,
++            owner: context.repo.owner,
++            repo: context.repo.repo,
++            body: '${{ steps.review.outputs.REVIEW_COMMENT }}'
++          })
+diff --git a/cmd/main.go b/cmd/main.go
+index c880cb5..961edc1 100644
+--- a/cmd/main.go
++++ b/cmd/main.go
+@@ -1,6 +1,7 @@
+ package main
+ 
+ import (
++	"context"
+ 	"fmt"
+ 	"github.com/Kcrong/groq-code-review-actions/pkg/prompt"
+ 	"github.com/magicx-ai/groq-go/groq"
+@@ -9,6 +10,10 @@ import (
+ 	"net/http"
+ 	"os"
+ 	"path/filepath"
++	"strconv"
++
++	"github.com/google/go-github/github"
++	"golang.org/x/oauth2"
+ )
+ 
+ const (
+@@ -17,15 +22,21 @@ const (
+ )
+ 
+ func main() {
++	token := os.Getenv("GITHUB_TOKEN")
++	if token == "" {
++		log.Fatalln("GITHUB_TOKEN environment variable is not set")
++		return
++	}
++
+ 	apiKey := os.Getenv("GROQ_API_KEY")
+ 	if apiKey == "" {
+-		log.Fatalf("GROQ_API_KEY environment variable not set")
++		log.Fatalln("GROQ_API_KEY environment variable not set")
+ 	}
+ 
+ 	// Read the PR diff
+ 	diff, err := os.ReadFile(filepath.Join(os.Getenv("GITHUB_WORKSPACE"), defaultDiffName))
+ 	if err != nil {
+-		log.Fatalf("Error reading diff: %+v", err)
++		log.Fatalf("Error reading diff: %+v\n", err)
+ 		return
+ 	}
+ 
+@@ -38,7 +49,44 @@ func main() {
+ 		log.Fatalf("Error running action: %+v", err)
+ 	}
+ 
+-	fmt.Println(results)
++	if err := createComment(token, results); err != nil {
++		log.Fatalf("Error creating comment: %+v", err)
++	}
++}
++
++func createComment(token string, content string) error {
++	owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
++	repo := os.Getenv("GITHUB_REPOSITORY_NAME")
++	prNumber := os.Getenv("GITHUB_PR_NUMBER")
++
++	if owner == "" || repo == "" || prNumber == "" {
++		return errors.New("one or more required environment variables are not set")
++	}
++
++	// Create a new GitHub client
++	ctx := context.Background()
++	ts := oauth2.StaticTokenSource(
++		&oauth2.Token{AccessToken: token},
++	)
++	tc := oauth2.NewClient(ctx, ts)
++	client := github.NewClient(tc)
++
++	// Create a new comment
++	comment := &github.IssueComment{
++		Body: &content,
++	}
++
++	prNum, err := strconv.Atoi(prNumber)
++	if err != nil {
++		return errors.Wrap(err, "error converting PR number")
++	}
++
++	_, _, err = client.Issues.CreateComment(ctx, owner, repo, prNum, comment)
++	if err != nil {
++		return errors.Wrap(err, "error creating comment")
++	}
++
++	return nil
+ }
+ 
+ type RunParameters struct {
+diff --git a/go.mod b/go.mod
+index 57c0ebb..15fda76 100644
+--- a/go.mod
++++ b/go.mod
+@@ -3,8 +3,13 @@ module github.com/Kcrong/groq-code-review-actions
+ go 1.22.3
+ 
+ require (
++	github.com/google/go-github v17.0.0+incompatible
+ 	github.com/magicx-ai/groq-go v0.1.0-alpha
+ 	github.com/pkg/errors v0.9.1
++	golang.org/x/oauth2 v0.21.0
+ )
+ 
+-require github.com/tmaxmax/go-sse v0.8.0 // indirect
++require (
++	github.com/google/go-querystring v1.1.0 // indirect
++	github.com/tmaxmax/go-sse v0.8.0 // indirect
++)
+diff --git a/go.sum b/go.sum
+index 88ececa..7097ca0 100644
+--- a/go.sum
++++ b/go.sum
+@@ -1,6 +1,16 @@
++github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
++github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
++github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
++github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
++github.com/google/go-github v17.0.0+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
++github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
++github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
+ github.com/magicx-ai/groq-go v0.1.0-alpha h1:jfTyJmFgAPGDNbe1wjYpv7ywQJjpcRAZWcJ+0pyC1Kk=
+ github.com/magicx-ai/groq-go v0.1.0-alpha/go.mod h1:3N6lhj6k88Wau/aD0SrbzcqJQnQlZEqXglMaNg7U6rQ=
+ github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+ github.com/tmaxmax/go-sse v0.8.0 h1:pPpTgyyi1r7vG2o6icebnpGEh3ebcnBXqDWkb7aTofs=
+ github.com/tmaxmax/go-sse v0.8.0/go.mod h1:HLoxqxdH+7oSUItjtnpxjzJedfr/+Rrm/dNWBcTxJFM=
++golang.org/x/oauth2 v0.21.0 h1:tsimM75w1tF/uws5rbeHzIWxEqElMehnc+iW793zsZs=
++golang.org/x/oauth2 v0.21.0/go.mod h1:XYTD2NtWslqkgxebSiOHnXEap4TF09sJSc7H1sXbhtI=
++golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
