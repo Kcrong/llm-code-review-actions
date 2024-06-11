@@ -12,11 +12,14 @@ jobs:
         uses: actions/setup-go@v2
 
       - name: Generate diff
-        uses: Kcrong/get-diff-action@main
+        uses: technote-space/get-diff-action@v6
         id: get-diff
 
       - name: Save diff
-        run: echo "${{ steps.get-diff.outputs.diff }}" > diff.txt
+        if: steps.get-diff.outputs.diff
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git diff origin/${{ github.event.pull_request.base.ref }} > diff.txt
 
       - name: Review
         if: steps.get-diff.outputs.diff
