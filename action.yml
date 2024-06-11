@@ -32,5 +32,5 @@ runs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '${{join(steps.review.outputs.*, '\n')}}'
+            body: '${{ steps.review.outputs.REVIEW_COMMENT }}'
           })
