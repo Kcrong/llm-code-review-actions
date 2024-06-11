@@ -1,0 +1,4 @@
+github.com/magicx-ai/groq-go v0.1.0-alpha h1:jfTyJmFgAPGDNbe1wjYpv7ywQJjpcRAZWcJ+0pyC1Kk=
+github.com/magicx-ai/groq-go v0.1.0-alpha/go.mod h1:3N6lhj6k88Wau/aD0SrbzcqJQnQlZEqXglMaNg7U6rQ=
+github.com/sethvargo/go-githubactions v1.2.0 h1:Gbr36trCAj6uq7Rx1DolY1NTIg0wnzw3/N5WHdKIjME=
+github.com/sethvargo/go-githubactions v1.2.0/go.mod h1:7/4WeHgYfSz9U5vwuToCK9KPnELVHAhGtRwLREOQV80=
