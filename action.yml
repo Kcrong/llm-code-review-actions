@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - name: Code review
-      id: code-review
+      id: review
       run: go run cmd/main.go
       env:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
@@ -28,5 +28,5 @@ runs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '${{join(steps.code-review.outputs.*, '\n')}}'
+            body: '${{join(steps.review.outputs.*, '\n')}}'
           })
