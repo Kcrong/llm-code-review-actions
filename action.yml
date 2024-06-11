@@ -19,5 +19,8 @@ runs:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
         DIFF_FILE: ${{ inputs.diff_file }}
         GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_PR_NUMBER: ${{ github.event.number }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        GITHUB_REPOSITORY_NAME: ${{ github.repository_name }}
       shell: bash
       working-directory: ${{ github.action_path }}
