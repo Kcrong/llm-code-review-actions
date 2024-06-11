@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Kcrong/groq-code-review-actions/pkg/prompt"
-	"github.com/magicx-ai/groq-go/groq"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +11,13 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
+	// TODO(@Kcrong): Delete vendor.
+	// magicx-ai/groq-go is private for now, we need to keep vendor until it's public.
+	"github.com/magicx-ai/groq-go/groq"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+
+	"github.com/Kcrong/groq-code-review-actions/pkg/prompt"
 )
 
 const (
@@ -42,8 +45,8 @@ func main() {
 	}
 
 	results, err := run(RunParameters{
-		ApiKey: apiKey,
-		Diff:   string(diff[:]),
+		APIKey: apiKey,
+		Diff:   string(diff),
 		Model:  defaultModel,
 	})
 	if err != nil {
@@ -100,13 +103,13 @@ func createComment(token string, content string) error {
 }
 
 type RunParameters struct {
-	ApiKey string
+	APIKey string
 	Diff   string
 	Model  groq.ModelID
 }
 
 func run(params RunParameters) (string, error) {
-	cli := groq.NewClient(params.ApiKey, http.DefaultClient)
+	cli := groq.NewClient(params.APIKey, http.DefaultClient)
 
 	req := groq.ChatCompletionRequest{
 		Messages: []groq.Message{

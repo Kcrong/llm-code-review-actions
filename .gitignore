@@ -14,8 +14,6 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# TODO(@Kcrong): Delete vendor.
-# magicx-ai/groq-go is private for now, we need to keep vendor until it's public.
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
