@@ -1,2 +1,2 @@
-# groq-code-review-actions
-Automatic code reviewer with Groq integration
+# llm-code-review-actions
+GitHub Actions for code review powered by LLM using Groq

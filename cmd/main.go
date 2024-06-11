@@ -11,13 +11,13 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	// TODO(@Kcrong): Delete vendor.
-	// magicx-ai/groq-go is private for now, we need to keep vendor until it's public.
-	"github.com/magicx-ai/groq-go/groq"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
-	"github.com/Kcrong/groq-code-review-actions/pkg/prompt"
+	"github.com/magicx-ai/groq-code-review-actions/pkg/prompt"
+	// TODO(@magicx-ai): Delete vendor.
+	// magicx-ai/groq-go is private for now, we need to keep vendor until it's public.
+	"github.com/magicx-ai/groq-go/groq"
 )
 
 const (
