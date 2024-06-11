@@ -1,0 +1,38 @@
+name: "Run TODO to Issue"
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+    inputs:
+      MANUAL_COMMIT_REF:
+        description: "The SHA of the commit to get the diff for"
+        required: true
+      MANUAL_BASE_REF:
+        description: "By default, the commit entered above is compared to the one directly before it; to go back further, enter an earlier SHA here"
+        required: false
+
+jobs:
+  todo:
+    permissions:
+      pull-requests: read
+      contents: read
+      actions: read
+      issues: write
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - name: "TODO to Issue"
+        uses: "alstr/todo-to-issue-action@v4"
+        with:
+          # Automatically assign new issues to the user who triggered the action
+          AUTO_ASSIGN: true
+          # Optional input that specifies whether to attempt to close an issue when a TODO is removed
+          CLOSE_ISSUES: true
+          # No Vendored Dependencies
+          IGNORE: "vendor/.*, .github/.*"
+        env:
+          # Manual REFs for workflow_dispatch
+          MANUAL_COMMIT_REF: ${{ inputs.MANUAL_COMMIT_REF }}
+          MANUAL_BASE_REF: ${{ inputs.MANUAL_BASE_REF }}
