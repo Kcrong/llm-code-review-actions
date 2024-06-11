@@ -14,14 +14,11 @@ runs:
   steps:
     - name: Code review
       id: review
-      run: |
-        echo 'REVIEW_COMMENT<<EOF' > $GITHUB_OUTPUT
-        go run cmd/main.go > comment.out
-        cat comment.out >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT
+      run: go run cmd/main.go
       env:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
         DIFF_FILE: ${{ inputs.diff_file }}
+        GITHUB_TOKEN: ${{ github.token }}
       shell: bash
       working-directory: ${{ github.action_path }}
 
