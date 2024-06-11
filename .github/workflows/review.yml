@@ -5,6 +5,7 @@ on: pull_request
 jobs:
   review:
     permissions:
+      contents: read
       pull-requests: write
 
     runs-on: ubuntu-latest
