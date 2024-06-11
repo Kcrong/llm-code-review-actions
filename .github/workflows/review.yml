@@ -1,0 +1,27 @@
+name: code review
+
+on: pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+
+      - name: Generate diff
+        uses: technote-space/get-diff-action@v6
+        id: get-diff
+
+      - name: Save diff
+        if: steps.get-diff.outputs.diff
+        run: echo "${{ steps.get-diff.outputs.diff }}" > diff.txt
+
+      - name: Review
+        if: steps.get-diff.outputs.diff
+        uses: Kcrong/groq-code-review-actions@main
+        with:
+          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+          diff_file: diff.txt

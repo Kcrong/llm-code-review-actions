@@ -5,20 +5,18 @@ inputs:
   groq_api_key:
     description: 'Groq API key'
     required: true
+  diff_file:
+    description: 'Generated diff file'
+    required: true
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v2
-    - name: Generate diff
-      shell: bash
-      working-directory: ${{ github.action_path }}
-      run: |
-        git fetch origin ${{ github.event.pull_request.base.ref }}
-        git diff origin/${{ github.event.pull_request.base.ref }} > diff.txt
     - name: Code review
       run: go run cmd/main.go
       env:
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
+        DIFF_FILE: ${{ inputs.diff_file }}
       shell: bash
       working-directory: ${{ github.action_path }}
