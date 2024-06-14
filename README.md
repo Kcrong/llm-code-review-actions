@@ -34,7 +34,7 @@ jobs:
 
       - name: Review
         if: steps.get-diff.outputs.diff
-        uses: magicx-ai/groq-code-review-actions@init
+        uses: Kcrong/llm-code-review-actions@init
         with:
           groq_api_key: ${{ secrets.GROQ_API_KEY }}
           diff_file: diff.txt

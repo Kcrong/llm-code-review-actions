@@ -1,4 +1,4 @@
-module github.com/magicx-ai/groq-code-review-actions
+module github.com/Kcrong/llm-code-review-actions
 
 go 1.22.3
 

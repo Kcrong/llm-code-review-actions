@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
-	"github.com/magicx-ai/groq-code-review-actions/pkg/prompt"
-	// TODO(@magicx-ai): Delete vendor.
+	"github.com/Kcrong/llm-code-review-actions/pkg/prompt"
+	// TODO(@Kcrong): Delete vendor.
 	// magicx-ai/groq-go is private for now, we need to keep vendor until it's public.
 	"github.com/magicx-ai/groq-go/groq"
 )
