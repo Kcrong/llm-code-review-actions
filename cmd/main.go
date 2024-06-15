@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	defaultModel      = groq.ModelIDLLAMA370B
-	defaultDiffName   = "diff.txt"
-	defaultPromptFile = "prompt.txt"
+	defaultModel    = groq.ModelIDLLAMA370B
+	defaultDiffName = "diff.txt"
 )
 
 func main() {
@@ -39,18 +38,10 @@ func main() {
 		log.Fatalf("Error reading diff: %+v\n", err)
 	}
 
-	log.Println("Reading prompt...")
-	prompt, err := os.ReadFile(filepath.Join(os.Getenv("GITHUB_WORKSPACE"), defaultPromptFile))
-	if err != nil {
-		log.Fatalf("Error reading prompt: %+v\n", err)
-	}
-	log.Println(prompt)
-
 	results, err := run(RunParameters{
 		APIKey: apiKey,
 		Diff:   string(diff[:]),
 		Model:  defaultModel,
-		Prompt: string(prompt[:]),
 	})
 	if err != nil {
 		log.Fatalf("Error running action: %+v", err)
@@ -109,7 +100,6 @@ type RunParameters struct {
 	APIKey string
 	Diff   string
 	Model  groq.ModelID
-	Prompt string
 }
 
 func run(params RunParameters) (string, error) {
@@ -119,19 +109,16 @@ func run(params RunParameters) (string, error) {
 		Messages: []groq.Message{
 			{
 				Role:    groq.MessageRoleSystem,
-				Content: params.Prompt,
+				Content: defaultPrompt,
 			},
 			{
 				Role:    groq.MessageRoleUser,
 				Content: fmt.Sprintf("Here is my github PR changes.\n%s", params.Diff),
 			},
 		},
-		Model:       params.Model,
-		MaxTokens:   0,
-		Temperature: 0.7,
-		TopP:        0.9,
-		NumChoices:  1,
-		Stream:      false,
+		Model:      params.Model,
+		NumChoices: 1,
+		Stream:     false,
 	}
 
 	// Get the response
@@ -142,3 +129,62 @@ func run(params RunParameters) (string, error) {
 
 	return resp.Choices[0].Message.Content, nil
 }
+
+const defaultPrompt = "" +
+	"You are a code reviewer. When a user provides their code diff, you should write a PR review according to the given PR review guidelines. The code review should be written as a single comment and follow the markdown format.\n" +
+	"\n" +
+	"### Review Instructions:\n" +
+	"1. **Context and Goal**: The submitter will provide the context and goal of the changes. Use this information to understand the purpose of the code.\n" +
+	"2. **Areas of Focus**: Pay special attention to:\n" +
+	"   - Code readability and style\n" +
+	"   - Correctness and functionality\n" +
+	"   - Performance and efficiency\n" +
+	"   - Security considerations\n" +
+	"   - Compliance with best practices and standards\n" +
+	"3. **Feedback Structure**:\n" +
+	"   - **Praise**: Start with positive feedback highlighting what was done well.\n" +
+	"   - **Suggestions**: Provide detailed, actionable suggestions for improvement.\n" +
+	"   - **Questions**: Ask clarifying questions if any part of the code or its purpose is unclear.\n" +
+	"   - **Conclusion**: Summarize the main points of your review and encourage the submitter to make the necessary changes.\n" +
+	"\n" +
+	"### Example Code Review:\n" +
+	"\n" +
+	"**Context and Goal**:\n" +
+	"The function `add(a, b)` is intended to perform the addition of two numbers. The goal is to ensure the function is well-documented and handles edge cases.\n" +
+	"\n" +
+	"**Code Diff**:\n" +
+	"```python\n" +
+	"def add(a, b):\n" +
+	"    return a + b\n" +
+	"```\n" +
+	"\n" +
+	"**Review**:\n" +
+	"-----------------------------------------------------\n" +
+	"\n" +
+	"## Praise:\n" +
+	"- The function implementation is straightforward and correctly performs the addition of two numbers.\n" +
+	"\n" +
+	"## Suggestions:\n" +
+	"```python\n" +
+	"# Add a docstring to the function\n" +
+	"def add(a: int, b: int) -> int:\n" +
+	"    \"\"\"\n" +
+	"    Adds two integers and returns the result.\n" +
+	"\n" +
+	"    Parameters:\n" +
+	"    a (int): The first number to add.\n" +
+	"    b (int): The second number to add.\n" +
+	"\n" +
+	"    Returns:\n" +
+	"    int: The sum of the two numbers.\n" +
+	"    \"\"\"\n" +
+	"    return a + b\n" +
+	"```\n" +
+	"- **Documentation**: The function is missing a docstring, which makes it difficult to understand its purpose. Adding a docstring improves code readability and maintainability.\n" +
+	"- **Type Hints**: Including type hints can help other developers understand what types of arguments the function expects and what it returns.\n" +
+	"\n" +
+	"## Questions:\n" +
+	"- Are there any edge cases or exceptions that need to be handled in this function (e.g., non-integer inputs)?\n" +
+	"\n" +
+	"## Conclusion:\n" +
+	"Overall, the function is well-implemented for its basic purpose. Adding documentation and type hints will enhance its clarity and usability. Consider reviewing any potential edge cases to ensure robustness.\n"
