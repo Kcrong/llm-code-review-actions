@@ -17,15 +17,15 @@ import (
 )
 
 const (
-	defaultModel    = groq.ModelIDLLAMA370B
-	defaultDiffName = "diff.txt"
+	defaultModel      = groq.ModelIDLLAMA370B
+	defaultDiffName   = "diff.txt"
+	defaultPromptFile = "prompt.txt"
 )
 
 func main() {
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
 		log.Fatalln("GITHUB_TOKEN environment variable is not set")
-		return
 	}
 
 	apiKey := os.Getenv("GROQ_API_KEY")
@@ -37,13 +37,20 @@ func main() {
 	diff, err := os.ReadFile(filepath.Join(os.Getenv("GITHUB_WORKSPACE"), defaultDiffName))
 	if err != nil {
 		log.Fatalf("Error reading diff: %+v\n", err)
-		return
 	}
+
+	log.Println("Reading prompt...")
+	prompt, err := os.ReadFile(filepath.Join(os.Getenv("GITHUB_WORKSPACE"), defaultPromptFile))
+	if err != nil {
+		log.Fatalf("Error reading prompt: %+v\n", err)
+	}
+	log.Println(prompt)
 
 	results, err := run(RunParameters{
 		APIKey: apiKey,
-		Diff:   string(diff),
+		Diff:   string(diff[:]),
 		Model:  defaultModel,
+		Prompt: string(prompt[:]),
 	})
 	if err != nil {
 		log.Fatalf("Error running action: %+v", err)
@@ -102,6 +109,7 @@ type RunParameters struct {
 	APIKey string
 	Diff   string
 	Model  groq.ModelID
+	Prompt string
 }
 
 func run(params RunParameters) (string, error) {
@@ -111,7 +119,7 @@ func run(params RunParameters) (string, error) {
 		Messages: []groq.Message{
 			{
 				Role:    groq.MessageRoleSystem,
-				Content: codeReviewRulePrompt,
+				Content: params.Prompt,
 			},
 			{
 				Role:    groq.MessageRoleUser,
@@ -134,26 +142,3 @@ func run(params RunParameters) (string, error) {
 
 	return resp.Choices[0].Message.Content, nil
 }
-
-const codeReviewRulePrompt = `
-You are a code reviewer. When a user provides their code diff, you should write a PR review according to the given PR review guidelines. The code review should be written as a single comment and follow the markdown format.
-
-The output of the code review should be a detailed review of the code changes, highlighting any issues, improvements, or suggestions. The review should be constructive and provide actionable feedback to the user.
-
-Example code review:
------------------------------------------------------
-## Original code
-'''language
-def add(a, b):
-'''
-
-## My Suggestions:
-'''language
-# Add a docstring to the function
-def add(doc, value):
-'''
-
-## Description:
-- The function is missing a docstring, which makes it difficult to understand its purpose.
------------------------------------------------------
-`
