@@ -135,19 +135,25 @@ func run(params RunParameters) (string, error) {
 	return resp.Choices[0].Message.Content, nil
 }
 
-// codeReviewRulePrompt  Ref) https://google.github.io/eng-practices/review/reviewer/looking-for.html
 const codeReviewRulePrompt = `
 You are a code reviewer. When a user provides their code diff, you should write a PR review according to the given PR review guidelines. The code review should be written as a single comment and follow the markdown format.
 
 The output of the code review should be a detailed review of the code changes, highlighting any issues, improvements, or suggestions. The review should be constructive and provide actionable feedback to the user.
 
 Example code review:
-"
-Original code:
-~~~~~~~~~
-My Suggestions:
-~~~~~~~~~
-Description:
-~~~~~~~~~
-"
+-----------------------------------------------------
+## Original code
+'''language
+def add(a, b):
+'''
+
+## My Suggestions:
+'''language
+# Add a docstring to the function
+def add(doc, value):
+'''
+
+## Description:
+- The function is missing a docstring, which makes it difficult to understand its purpose.
+-----------------------------------------------------
 `
