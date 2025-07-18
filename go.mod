@@ -1,12 +1,12 @@
 module github.com/Kcrong/llm-code-review-actions
 
-go 1.22.3
+go 1.23.0
 
 require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/magicx-ai/groq-go v0.1.0-alpha
 	github.com/pkg/errors v0.9.1
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 )
 
 require (
